@@ -10,6 +10,11 @@ public class PointerCast : MonoBehaviour
         if (Physics.Raycast(ray, out hit))
         {
             mouseObject.position = hit.point;
+
+            if(Input.GetMouseButtonDown(0))
+            {
+                Drone.allDrones[0].GoToPosition(Grid.instance.GridToWorld(hit.point));
+            }
         }
     }
 }
