@@ -11,17 +11,20 @@ public class CameraMove : MonoBehaviour
     
     void Update()
     {
-        float scrollDelta = Input.GetAxis("Mouse ScrollWheel");
-
         Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
         Vector3 targetVelocity = new Vector3(input.x, 0, input.y).normalized * speed;
-        targetVelocity+= transform.forward * scrollDelta * scrollspeed * 1000;
         
+        float scrollDelta = Input.GetAxis("Mouse ScrollWheel");
+        if(transform.position.y==heightLimit.x && scrollDelta>=0) {scrollDelta=0; currentVelocity = Vector3.zero;}else
+        if(transform.position.y==heightLimit.y && scrollDelta<=0) {scrollDelta=0; currentVelocity = Vector3.zero;}else{
+            targetVelocity += transform.forward * scrollDelta * scrollspeed * 1000;
+        }
+                
         // Smooth acceleration/deceleration
         currentVelocity = Vector3.Lerp(currentVelocity, targetVelocity, acceleration * Time.deltaTime);
         
         transform.Translate(currentVelocity * Time.deltaTime, Space.World);
-
+        
         // Clamp camera height
         Vector3 position = transform.position;
         position.y = Mathf.Clamp(position.y, heightLimit.x, heightLimit.y);
