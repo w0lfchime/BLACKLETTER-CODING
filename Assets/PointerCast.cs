@@ -13,7 +13,7 @@ public class PointerCast : MonoBehaviour
 
             if(Input.GetMouseButtonDown(0))
             {
-                Drone.allDrones[0].GoToPosition(Grid.instance.GridToWorld(hit.point));
+                Drone.allDrones[0].GoToPosition(Grid.instance.WorldToGrid(hit.point));
             }
         }
     }

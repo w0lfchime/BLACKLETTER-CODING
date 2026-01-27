@@ -9,6 +9,11 @@ public class CameraMove : MonoBehaviour
     
     private Vector3 currentVelocity = Vector3.zero;
     
+    void OnEnable()
+    {
+        currentVelocity = Vector3.zero;
+    }
+    
     void Update()
     {
         Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
