@@ -1,0 +1,87 @@
+#pragma kernel CSMain
+
+struct Enemy
+{
+    float3 position;
+    float3 velocity;
+};
+
+RWStructuredBuffer<Enemy> enemies;
+float3 targetPosition;
+float deltaTime;
+float maxSpeed;
+float maxForce;
+float separationRadius;
+float separationWeight;
+float seekWeight;
+int enemyCount;
+
+[numthreads(256, 1, 1)]
+void CSMain(uint3 id : SV_DispatchThreadID)
+{
+    if (id.x >= (uint)enemyCount)
+        return;
+    
+    Enemy enemy = enemies[id.x];
+    
+    // Separation
+    float3 separation = float3(0, 0, 0);
+    int count = 0;
+    
+    for (int i = 0; i < enemyCount; i++)
+    {
+        if (i == (int)id.x)
+            continue;
+        
+        float3 other = enemies[i].position;
+        float3 diff = float3(enemy.position.x - other.x, 0, enemy.position.z - other.z);
+        float dist = length(diff);
+        
+        if (dist < separationRadius && dist > 0.001)
+        {
+            separation += normalize(diff) / dist;
+            count++;
+        }
+    }
+    
+    if (count > 0)
+    {
+        separation /= count;
+        if (length(separation) > 0)
+        {
+            separation = normalize(separation) * maxSpeed - enemy.velocity;
+            if (length(separation) > maxForce)
+                separation = normalize(separation) * maxForce;
+        }
+    }
+    
+    // Seek
+    float3 desired = float3(targetPosition.x - enemy.position.x, 0, targetPosition.z - enemy.position.z);
+    float dist2 = length(desired);
+    float3 seek = float3(0, 0, 0);
+    
+    if (dist2 > 0.1)
+    {
+        desired = normalize(desired) * maxSpeed;
+        seek = desired - enemy.velocity;
+        if (length(seek) > maxForce)
+            seek = normalize(seek) * maxForce;
+    }
+    
+    // Apply steering
+    float3 acceleration = separation * separationWeight + seek * seekWeight;
+    acceleration.y = 0;
+    
+    if (length(acceleration) > maxForce)
+        acceleration = normalize(acceleration) * maxForce;
+    
+    enemy.velocity += acceleration * deltaTime;
+    
+    if (length(enemy.velocity) > maxSpeed)
+        enemy.velocity = normalize(enemy.velocity) * maxSpeed;
+    
+    enemy.position += enemy.velocity * deltaTime;
+    enemy.position.y = 0;
+    
+    enemies[id.x] = enemy;
+}
