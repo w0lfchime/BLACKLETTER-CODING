@@ -135,10 +135,10 @@ Material:
     - _offset: 0.08
     - _scale: 7.16
     - _speed: 0.001
-    - _tangent: 465.86
+    - _tangent: 999999
     m_Colors:
     - _BaseColor: {r: 0.38679248, g: 0.2939822, b: 0, a: 1}
-    - _Color: {r: 0.32549018, g: 0.32849887, b: 0.8117647, a: 0.49019608}
+    - _Color: {r: 0, g: 0, b: 0, a: 0.5019608}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _bright: {r: 0, g: 0, b: 0, a: 0.6745098}
