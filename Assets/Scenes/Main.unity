@@ -137,7 +137,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!65 &242992465
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -661,6 +661,7 @@ MonoBehaviour:
   positionMultiplier: 1
   tilePrefab: {fileID: 569308286833570803, guid: 0a91ab2440cc8ca44a17d4765b0d683f, type: 3}
   dronePrefab: {fileID: 7462912387970245473, guid: 432c77d03844cfe40a6a63927a862fab, type: 3}
+  hubPrefab: {fileID: 0}
 --- !u!4 &1144014720
 Transform:
   m_ObjectHideFlags: 0
