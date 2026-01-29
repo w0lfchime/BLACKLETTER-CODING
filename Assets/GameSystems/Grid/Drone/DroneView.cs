@@ -2,9 +2,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
 
-public class Drone : GridObject
+public class DroneView : GridObject
 {
-    public static List<Drone> allDrones = new List<Drone>();
+    public static List<DroneView> allDrones = new List<DroneView>();
     public float speed = 5f;
     public float height = 5f;
     public float swayAmount = 0.3f;
@@ -50,16 +50,16 @@ public class Drone : GridObject
 
     public void GoToPosition(Vector3Int targetPosition)
     {
-        Vector3 worldTargetPosition = Grid.instance.GridToWorld(targetPosition);
+        Vector3 worldTargetPosition = DroneSpace.Grid.instance.GridToWorld(targetPosition);
         worldTargetPosition.y = height;
         float time = (transform.position - worldTargetPosition).magnitude / speed;
 
-        Grid.instance.RemoveObject(gameObject, currentTilePosition);
+        DroneSpace.Grid.instance.RemoveObject(gameObject, currentTilePosition);
         
         transform.DOMove(worldTargetPosition, time)
             .SetEase(Ease.InOutQuad)
             .OnComplete(() => {
-                Grid.instance.AddObject(gameObject, targetPosition);
+                DroneSpace.Grid.instance.AddObject(gameObject, targetPosition);
             });
     }
 }
