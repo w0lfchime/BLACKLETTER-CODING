@@ -20,8 +20,18 @@ public class CameraMove : MonoBehaviour
         Vector3 targetVelocity = new Vector3(input.x, 0, input.y).normalized * speed;
         
         float scrollDelta = Input.GetAxis("Mouse ScrollWheel");
-        if(transform.position.y==heightLimit.x && scrollDelta>=0) {scrollDelta=0; currentVelocity = Vector3.zero;}else
-        if(transform.position.y==heightLimit.y && scrollDelta<=0) {scrollDelta=0; currentVelocity = Vector3.zero;}else{
+        bool atLowerLimit = transform.position.y <= heightLimit.x;
+        bool atUpperLimit = transform.position.y >= heightLimit.y;
+        
+        if((atLowerLimit && scrollDelta >= 0) || (atUpperLimit && scrollDelta <= 0))
+        {
+            scrollDelta = 0;
+            // Remove the scroll-induced velocity (along transform.forward), keep perpendicular velocity
+            currentVelocity -= Vector3.Project(currentVelocity, transform.forward);
+        }
+        
+        if(scrollDelta != 0)
+        {
             targetVelocity += transform.forward * scrollDelta * scrollspeed * 1000;
         }
                 
