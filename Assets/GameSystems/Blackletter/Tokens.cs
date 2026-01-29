@@ -1,13 +1,6 @@
-// Tokens.cs
-// Core token + span + diagnostics primitives for Blackletter.
-// Keep this file Unity-friendly and dependency-free.
-//
-// Notes:
-// - Tokens point into source text via TextSpan (start+length). They do NOT store substrings.
-// - Line/column can be computed via LineMap (optional but useful for diagnostics & tooling).
-// - INDENT/DEDENT/NEWLINE are explicit token kinds to support Python-like indentation parsing.
 
-#nullable enable
+//TODO: separate file (?)
+
 
 using System;
 using System.Collections.Generic;
@@ -15,11 +8,7 @@ using System.Runtime.CompilerServices;
 
 namespace Blackletter
 {
-    // ----------------------------
-    // Text location primitives
-    // ----------------------------
-
-    /// <summary>Half-open span [Start, Start+Length) in the source text.</summary>
+#nullable enable
     public readonly struct TextSpan : IEquatable<TextSpan>
     {
         public readonly int Start;
@@ -54,7 +43,7 @@ namespace Blackletter
         public static bool operator !=(TextSpan a, TextSpan b) => !a.Equals(b);
     }
 
-    /// <summary>1-based line/column location used for diagnostics and IDE tools.</summary>
+
     public readonly struct LinePosition : IEquatable<LinePosition>
     {
         public readonly int Line;   // 1-based
@@ -74,7 +63,7 @@ namespace Blackletter
         public static bool operator !=(LinePosition a, LinePosition b) => !a.Equals(b);
     }
 
-    /// <summary>Maps absolute char offsets to (line, column) efficiently.</summary>
+
     public sealed class LineMap
     {
         // Stores the starting offset of each line.
@@ -205,12 +194,13 @@ namespace Blackletter
         Synthetic = 1 << 0, // produced by lexer (INDENT/DEDENT), not present in source
     }
 
-    /// <summary>
-    /// A token is a classified slice of source text.
-    /// For performance, it stores only a kind + span + optional payload.
-    /// </summary>
+
+
     public readonly struct Token : IEquatable<Token>
     {
+        //TODO add meta for rendering
+
+
         public readonly TokenKind Kind;
         public readonly TextSpan Span;
         public readonly TokenFlags Flags;
@@ -250,7 +240,6 @@ namespace Blackletter
         public static bool operator !=(Token a, Token b) => !a.Equals(b);
     }
 
-    /// <summary>Utility helpers for slicing token text from source.</summary>
     public static class TokenText
     {
         [MethodImpl(MethodImplOptions.AggressiveInlining)]
@@ -279,10 +268,6 @@ namespace Blackletter
         }
     }
 
-    // ----------------------------
-    // Diagnostics (for lexer/parser/etc.)
-    // ----------------------------
-
     public enum DiagnosticSeverity : byte
     {
         Info,
@@ -295,7 +280,7 @@ namespace Blackletter
         public readonly DiagnosticSeverity Severity;
         public readonly string Message;
         public readonly TextSpan Span;
-        public readonly string? Code; // e.g., "BL0001"
+        public readonly string? Code; 
 
         public Diagnostic(DiagnosticSeverity severity, string message, TextSpan span, string? code = null)
         {
@@ -340,13 +325,6 @@ namespace Blackletter
             => Add(DiagnosticSeverity.Info, message, span, code);
     }
 
-    // ----------------------------
-    // Token stream utilities (parser-friendly)
-    // ----------------------------
-
-    /// <summary>
-    /// Lightweight cursor over a token array/list for parsing.
-    /// </summary>
     public readonly struct TokenReader
     {
         private readonly IReadOnlyList<Token> _tokens;
@@ -367,8 +345,6 @@ namespace Blackletter
             int index = Position + offset;
             if ((uint)index >= (uint)_tokens.Count)
             {
-                // If your lexer always appends EOF, this will rarely happen,
-                // but it keeps the parser safe.
                 return new Token(TokenKind.EndOfFile, new TextSpan(_tokens.Count > 0 ? _tokens[_tokens.Count - 1].Span.End : 0, 0), flags: TokenFlags.Synthetic);
             }
 
@@ -383,11 +359,6 @@ namespace Blackletter
 
         public bool IsAtEnd => Current.Kind == TokenKind.EndOfFile;
     }
-
-    // ----------------------------
-    // Keyword helpers (optional convenience)
-    // ----------------------------
-
     public static class Keywords
     {
         private static readonly Dictionary<string, TokenKind> _map = new Dictionary<string, TokenKind>(StringComparer.Ordinal)
@@ -409,9 +380,7 @@ namespace Blackletter
 
         public static bool TryGetKeywordKind(ReadOnlySpan<char> text, out TokenKind kind)
         {
-            // Avoid allocations: only allocate if we must.
-            // For small language sizes, this is fine. If you later want zero-alloc,
-            // switch to a trie or span-based dictionary alternative.
+            //avoid allocations: only allocate if we must.
             if (text.Length == 0)
             {
                 kind = TokenKind.Identifier;
@@ -426,4 +395,5 @@ namespace Blackletter
             return false;
         }
     }
+#nullable disable
 }

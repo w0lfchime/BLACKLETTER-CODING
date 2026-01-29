@@ -4,77 +4,77 @@ using System;
 
 
 
-[CreateAssetMenu(fileName = "BlackletterScript", menuName = "Scriptable Objects/BlackletterScript")]
-public sealed class BlackletterScript : ScriptableObject
+namespace Blackletter
 {
-    [Header("Source")]
-    [TextArea(8, 32)]
-    [SerializeField] private string sourceText = "";
-
-    [Header("Compilation State")]
-    [SerializeField, HideInInspector] private bool hasErrors;
-
-#nullable enable
-    // These are NOT serialized on purpose
-    [System.NonSerialized] private List<Blackletter.Token>? tokens;
-    [System.NonSerialized] private List<Blackletter.Diagnostic>? diagnostics;
-    [System.NonSerialized] private object? compiledProgram; // later: instruction list / bytecode
-#nullable disable
-
-
-    public string SourceText
+    [CreateAssetMenu(fileName = "BlackletterScript", menuName = "Scriptable Objects/BlackletterScript")]
+    public sealed class BlackletterScript : ScriptableObject
     {
-        get => sourceText;
-        set
+        [Header("Source")]
+        [TextArea(8, 32)]
+        [SerializeField] private string sourceText = "";
+
+        [Header("Compilation State")]
+        [SerializeField, HideInInspector] private bool hasErrors;
+
+    #nullable enable
+        [System.NonSerialized] private List<Blackletter.Token>? tokens;
+        [System.NonSerialized] private List<Blackletter.Diagnostic>? diagnostics;
+        [System.NonSerialized] private object? compiledProgram; 
+    #nullable disable
+
+
+        public string SourceText
         {
-            if (sourceText == value) return;
-            sourceText = value;
-            Invalidate();
+            get => sourceText;
+            set
+            {
+                if (sourceText == value) return;
+                sourceText = value;
+                Invalidate();
+            }
         }
+
+
+
+    #nullable enable
+        public bool HasErrors => hasErrors;
+        public IReadOnlyList<Blackletter.Token>? Tokens => tokens;
+        public IReadOnlyList<Blackletter.Diagnostic>? Diagnostics => diagnostics;
+    #nullable disable
+
+        //mark code as dirty
+        public void Invalidate()
+        {
+            tokens = null;
+            diagnostics = null;
+            compiledProgram = null;
+            hasErrors = false;
+        }
+
+        //frequent compile on demand
+        public void Compile()
+        {
+            Invalidate();
+
+            //
+            // var lexer = new Lexer(sourceText);
+            // tokens = lexer.Lex(out diagnostics);
+            // if (diagnostics.HasErrors) { hasErrors = true; return; }
+            // compiledProgram = compiler.Emit(boundTree);
+
+            diagnostics = new List<Blackletter.Diagnostic>();
+            tokens = new List<Blackletter.Token>();
+
+            hasErrors = false;
+        }
+
+    #if UNITY_EDITOR
+        private void OnValidate()
+        {
+
+            Compile();
+        }
+    #endif
     }
-
-
-
-#nullable enable
-    public bool HasErrors => hasErrors;
-    public IReadOnlyList<Blackletter.Token>? Tokens => tokens;
-    public IReadOnlyList<Blackletter.Diagnostic>? Diagnostics => diagnostics;
-#nullable disable
-
-    /// <summary>Marks cached compilation results dirty.</summary>
-    public void Invalidate()
-    {
-        tokens = null;
-        diagnostics = null;
-        compiledProgram = null;
-        hasErrors = false;
-    }
-
-    /// <summary>Compile on demand. Safe to call repeatedly.</summary>
-    public void Compile()
-    {
-        Invalidate();
-
-        // Later this becomes:
-        // var lexer = new Lexer(sourceText);
-        // tokens = lexer.Lex(out diagnostics);
-        // if (diagnostics.HasErrors) { hasErrors = true; return; }
-        // var parser = new Parser(tokens);
-        // ...
-        // compiledProgram = compiler.Emit(boundTree);
-
-        diagnostics = new List<Blackletter.Diagnostic>();
-        tokens = new List<Blackletter.Token>();
-
-        // placeholder until lexer exists
-        hasErrors = false;
-    }
-
-#if UNITY_EDITOR
-    private void OnValidate()
-    {
-        // Auto-recompile in editor when text changes
-        Compile();
-    }
-#endif
 }
+
