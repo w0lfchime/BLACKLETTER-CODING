@@ -11,7 +11,7 @@ public class PointerCast : MonoBehaviour
         {
             mouseObject.position = hit.point;
 
-            if(Input.GetMouseButtonDown(0))
+            if(Input.GetMouseButton(0))
             {
                 DroneView.allDrones[0].GoToPosition(DroneSpace.Grid.instance.WorldToGrid(hit.point));
             }

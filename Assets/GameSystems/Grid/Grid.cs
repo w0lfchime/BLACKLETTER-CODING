@@ -13,6 +13,7 @@ namespace DroneSpace
         public float positionMultiplier = 1;
         public GameObject tilePrefab;
         public GameObject dronePrefab;
+        public GameObject hubPrefab;
     
         void OnEnable()
         {
@@ -34,8 +35,9 @@ namespace DroneSpace
                     Instantiate(tilePrefab, GridToWorld(new Vector3Int(x, 0, z)), Quaternion.identity);
                 }
             }
-
-            Spawn(dronePrefab , new Vector3Int(size / 2, 0, size / 2));
+            int middle = (int)(size / 2);
+            Spawn(dronePrefab , new Vector3Int(middle, 0, middle), 1);
+            Spawn(hubPrefab , new Vector3Int(middle, 0, middle));
         }
 
         public Vector3Int WorldToGrid(Vector3 position)
@@ -56,9 +58,10 @@ namespace DroneSpace
             return new Vector3(x, 0, z);
         }
 
-        public bool Spawn(GameObject obj, Vector3Int position)
+        public bool Spawn(GameObject obj, Vector3Int position, float heightOffset = 0)
         {
-            GameObject objIns = Instantiate(obj, (Vector3)position * positionMultiplier, Quaternion.identity);
+            heightOffset+=.5f;
+            GameObject objIns = Instantiate(obj, GridToWorld(position)+Vector3.up * heightOffset, Quaternion.identity);
             AddObject(objIns, position);
             return true;
         }
