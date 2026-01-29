@@ -8,6 +8,7 @@ public class Grid : MonoBehaviour
     public List<GameObject>[,] gridArray;
     public int size;
     public float positionMultiplier = 1;
+    public GameObject tilePrefab;
     public GameObject dronePrefab;
     
     void OnEnable()
@@ -27,6 +28,7 @@ public class Grid : MonoBehaviour
             for (int z = 0; z < size; z++)
             {
                 gridArray[x, z] = new List<GameObject>();
+                Instantiate(tilePrefab, GridToWorld(new Vector3Int(x, 0, z)), Quaternion.identity);
             }
         }
 
@@ -35,9 +37,20 @@ public class Grid : MonoBehaviour
 
     public Vector3Int WorldToGrid(Vector3 position)
     {
-        Vector3Int gridPosition = Vector3Int.RoundToInt(position);
-        gridPosition.y = 0;
-        return gridPosition;
+        int x = Mathf.RoundToInt(position.x / positionMultiplier) + size / 2;
+        int z = Mathf.RoundToInt(position.z / positionMultiplier) + size / 2;
+        
+        x = ((x % size) + size) % size;
+        z = ((z % size) + size) % size;
+
+        return new Vector3Int(x, 0, z);
+    }
+
+    public Vector3 GridToWorld(Vector3Int gridPos)
+    {
+        float x = (gridPos.x - size / 2) * positionMultiplier;
+        float z = (gridPos.z - size / 2) * positionMultiplier;
+        return new Vector3(x, 0, z);
     }
 
     public bool Spawn(GameObject obj, Vector3Int position)
@@ -66,10 +79,10 @@ public class Grid : MonoBehaviour
         {
             for (int x = 0; x < size; x++)
             {
-                for (int y = 0; y < size; y++)
+                for (int z = 0; z < size; z++)
                 {
                     Gizmos.color = Color.white;
-                    Gizmos.DrawWireCube(new Vector3(x * positionMultiplier, 0, y * positionMultiplier), Vector3.one * positionMultiplier);
+                    Gizmos.DrawWireCube(GridToWorld(new Vector3Int(x, 0, z)), Vector3.one * positionMultiplier);
                 }
             }
         }

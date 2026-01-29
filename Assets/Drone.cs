@@ -50,7 +50,8 @@ public class Drone : GridObject
 
     public void GoToPosition(Vector3Int targetPosition)
     {
-        Vector3 worldTargetPosition = new Vector3(targetPosition.x * Grid.instance.positionMultiplier, height, targetPosition.z * Grid.instance.positionMultiplier);
+        Vector3 worldTargetPosition = Grid.instance.GridToWorld(targetPosition);
+        worldTargetPosition.y = height;
         float time = (transform.position - worldTargetPosition).magnitude / speed;
 
         Grid.instance.RemoveObject(gameObject, currentTilePosition);

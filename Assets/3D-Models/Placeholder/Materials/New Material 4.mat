@@ -133,7 +133,7 @@ Material:
     - _WorkflowMode: 1
     - _ZWrite: 1
     - _offset: 0.08
-    - _scale: 10.1
+    - _scale: 1.25
     - _tangent: 465.86
     m_Colors:
     - _BaseColor: {r: 0.38679248, g: 0.2939822, b: 0, a: 1}
