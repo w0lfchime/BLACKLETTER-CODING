@@ -16,7 +16,13 @@ public class CameraMove : MonoBehaviour
     
     void Update()
     {
-        Vector2 input = new Vector2(Input.GetAxisRaw("Horizontal"), Input.GetAxisRaw("Vertical"));
+        // WASD only (not arrow keys)
+        Vector2 input = Vector2.zero;
+        if (Input.GetKey(KeyCode.W)) input.y += 1;
+        if (Input.GetKey(KeyCode.S)) input.y -= 1;
+        if (Input.GetKey(KeyCode.D)) input.x += 1;
+        if (Input.GetKey(KeyCode.A)) input.x -= 1;
+        
         Vector3 targetVelocity = new Vector3(input.x, 0, input.y).normalized * speed;
         
         float scrollDelta = Input.GetAxis("Mouse ScrollWheel");

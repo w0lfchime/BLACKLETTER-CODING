@@ -1,6 +1,7 @@
 using System.Collections.Generic;
 using UnityEngine;
 using DG.Tweening;
+using System;
 
 
 namespace DroneSpace
@@ -9,6 +10,10 @@ namespace DroneSpace
     {
         public static Grid instance;
         public List<GameObject>[,] gridArray;
+        private GameObject[,] tileArray;
+        [Range(1f, 20f)]
+        public int setSize;
+        [HideInInspector]
         public int size;
         public float positionMultiplier = 1;
         public GameObject tilePrefab;
@@ -18,13 +23,16 @@ namespace DroneSpace
         void OnEnable()
         {
             instance = this;
+            size = setSize*2+1;
         }
     
         void Start()
         {
+            size = setSize*2+1;
             if (gridArray != null) return; // Already initialized, skip
         
             gridArray = new List<GameObject>[size, size];
+            tileArray = new GameObject[size, size];
         
             // Initialize all lists in the grid
             for (int x = 0; x < size; x++)
@@ -32,7 +40,7 @@ namespace DroneSpace
                 for (int z = 0; z < size; z++)
                 {
                     gridArray[x, z] = new List<GameObject>();
-                    Instantiate(tilePrefab, GridToWorld(new Vector3Int(x, 0, z)), Quaternion.identity);
+                    tileArray[x, z] = Instantiate(tilePrefab, GridToWorld(new Vector3Int(x, 0, z)), Quaternion.identity);
                 }
             }
             int middle = (int)(size / 2);
@@ -40,14 +48,46 @@ namespace DroneSpace
             Spawn(hubPrefab , new Vector3Int(middle, 0, middle));
         }
 
+        void FixedUpdate()
+        {
+            size = setSize*2+1;
+            if(gridArray.GetLength(0) != size)
+            {
+                // Destroy all old tiles
+                foreach(var tile in tileArray)
+                    if(tile != null) tile.transform.DOScale(0, .5f).SetEase(Ease.InBack).OnComplete(() => Destroy(tile));
+                
+                // Recreate grid from scratch
+                gridArray = new List<GameObject>[size, size];
+                tileArray = new GameObject[size, size];
+                
+                for(int x = 0; x < size; x++)
+                {
+                    for(int z = 0; z < size; z++)
+                    {
+                        gridArray[x, z] = new List<GameObject>();
+                        tileArray[x, z] = Instantiate(tilePrefab, GridToWorld(new Vector3Int(x, 0, z)), Quaternion.identity);
+                        tileArray[x, z].transform.DOScale(Vector3.zero, 1).From().SetEase(Ease.OutBounce);
+                    }
+                }
+
+                RemoveObject(DroneView.allDrones[0].gameObject, DroneView.allDrones[0].GetComponent<GridObject>().currentTilePosition);
+                AddObject(DroneView.allDrones[0].gameObject, new Vector3Int(size/2,0,size/2));
+            }
+        }
+
         public Vector3Int WorldToGrid(Vector3 position)
         {
             int x = Mathf.RoundToInt(position.x / positionMultiplier) + size / 2;
             int z = Mathf.RoundToInt(position.z / positionMultiplier) + size / 2;
         
-            x = ((x % size) + size) % size;
-            z = ((z % size) + size) % size;
+            return loopGridPosition(new Vector3Int(x, 0, z));
+        }
 
+        public Vector3Int loopGridPosition(Vector3Int gridPos)
+        {
+            int x = ((gridPos.x % size) + size) % size;
+            int z = ((gridPos.z % size) + size) % size;
             return new Vector3Int(x, 0, z);
         }
 
@@ -75,7 +115,9 @@ namespace DroneSpace
         public bool AddObject(GameObject obj, Vector3Int position)
         {
             gridArray[position.x, position.z].Add(obj);
-            obj.GetComponent<GridObject>().currentTilePosition = position;
+            var gridObject = obj.GetComponent<GridObject>();
+            if(gridObject != null)
+                gridObject.currentTilePosition = position;
             return true;
         }
 

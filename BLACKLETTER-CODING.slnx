@@ -1,6 +1,5 @@
 ﻿<Solution>
   <Project Path="Assembly-CSharp.csproj" />
   <Project Path="Assembly-CSharp-firstpass.csproj" />
-  <Project Path="com.ben-w.erp.csproj" />
   <Project Path="Assembly-CSharp-Editor.csproj" />
 </Solution>
