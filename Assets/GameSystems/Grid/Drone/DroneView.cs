@@ -56,7 +56,7 @@ public class DroneView : GridObject
         GoToPosition(currentTilePosition + new Vector3Int((int)direction.x, 0, (int)direction.y));
     }
 
-    public void GoToPosition(Vector3Int gridPosition)
+    public void GoToPosition(Vector3Int gridPosition, bool instant = false)
     {
         // Calculate distance before wrapping so wrapping counts as intended distance
         float distance = (gridPosition - currentTilePosition).magnitude;
@@ -70,7 +70,13 @@ public class DroneView : GridObject
         DroneSpace.Grid.instance.RemoveObject(gameObject, currentTilePosition);
 
         moving = true;
-
+        if (instant)
+        {
+            transform.position = worldTargetPosition;
+            DroneSpace.Grid.instance.AddObject(gameObject, gridPosition);
+            moving = false;
+            return;
+        }
         transform.DOMove(worldTargetPosition, time)
             .SetEase(Ease.InOutQuad)
             .OnComplete(() => {
@@ -78,4 +84,5 @@ public class DroneView : GridObject
                 moving = false;
             });
     }
+    
 }
