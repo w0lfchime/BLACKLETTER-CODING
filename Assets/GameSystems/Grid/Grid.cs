@@ -19,6 +19,8 @@ namespace DroneSpace
         public GameObject tilePrefab;
         public GameObject dronePrefab;
         public GameObject hubPrefab;
+        public Transform TilesParent;
+
     
         void OnEnable()
         {
@@ -40,7 +42,7 @@ namespace DroneSpace
                 for (int z = 0; z < size; z++)
                 {
                     gridArray[x, z] = new List<GameObject>();
-                    tileArray[x, z] = Instantiate(tilePrefab, GridToWorld(new Vector3Int(x, 0, z)), Quaternion.identity);
+                    tileArray[x, z].transform.parent = TilesParent;
                 }
             }
             int middle = (int)(size / 2);
@@ -67,6 +69,7 @@ namespace DroneSpace
                     {
                         gridArray[x, z] = new List<GameObject>();
                         tileArray[x, z] = Instantiate(tilePrefab, GridToWorld(new Vector3Int(x, 0, z)), Quaternion.identity);
+                        tileArray[x, z].transform.parent = TilesParent;
                         tileArray[x, z].transform.DOScale(Vector3.zero, 1).From().SetEase(Ease.OutBounce);
                     }
                 }
