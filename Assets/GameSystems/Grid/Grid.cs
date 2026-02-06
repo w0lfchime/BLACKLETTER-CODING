@@ -72,7 +72,7 @@ namespace DroneSpace
                 }
 
                 RemoveObject(DroneView.allDrones[0].gameObject, DroneView.allDrones[0].GetComponent<GridObject>().currentTilePosition);
-                AddObject(DroneView.allDrones[0].gameObject, new Vector3Int(size/2,0,size/2));
+                DroneView.allDrones[0].GoToPosition(new Vector3Int(size/2,0,size/2), true);
             }
         }
 
@@ -88,14 +88,14 @@ namespace DroneSpace
         {
             int x = ((gridPos.x % size) + size) % size;
             int z = ((gridPos.z % size) + size) % size;
-            return new Vector3Int(x, gridPos.y, z);
+            return new Vector3Int(x, 0, z);
         }
 
         public Vector3 GridToWorld(Vector3Int gridPos)
         {
             float x = (gridPos.x - size / 2) * positionMultiplier;
             float z = (gridPos.z - size / 2) * positionMultiplier;
-            return new Vector3(x, gridPos.y, z);
+            return new Vector3(x, 0, z);
         }
 
         public bool Spawn(GameObject obj, Vector3Int position, float heightOffset = 0)
@@ -116,7 +116,6 @@ namespace DroneSpace
         {
             gridArray[position.x, position.z].Add(obj);
             var gridObject = obj.GetComponent<GridObject>();
-            obj.transform.position = GridToWorld(position);
             if(gridObject != null)
                 gridObject.currentTilePosition = position;
             return true;
