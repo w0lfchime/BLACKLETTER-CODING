@@ -131,7 +131,7 @@ namespace Blackletter
         Float,
         String,
 
-        // Keywords (grow as you need)
+
         If,
         Elif,
         Else,
@@ -146,8 +146,7 @@ namespace Blackletter
         False,
         None,
 
-        // Operators / punctuation
-        // One-char
+
         Plus,          // +
         Minus,         // -
         Star,          // *
