@@ -137,7 +137,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!65 &242992465
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -641,7 +641,7 @@ GameObject:
   - component: {fileID: 1133698409}
   - component: {fileID: 1133698408}
   m_Layer: 0
-  m_Name: Cube
+  m_Name: View
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -771,6 +771,7 @@ MonoBehaviour:
   tilePrefab: {fileID: 569308286833570803, guid: 0a91ab2440cc8ca44a17d4765b0d683f, type: 3}
   dronePrefab: {fileID: 7462912387970245473, guid: 432c77d03844cfe40a6a63927a862fab, type: 3}
   hubPrefab: {fileID: 3491106165475578014, guid: 55bbea8bb01c4e14b93b015b4fe41e60, type: 3}
+  TilesParent: {fileID: 849211704}
 --- !u!4 &1144014720
 Transform:
   m_ObjectHideFlags: 0
@@ -1049,7 +1050,7 @@ GameObject:
   - component: {fileID: 1850383743}
   - component: {fileID: 1850383742}
   m_Layer: 0
-  m_Name: Cube (1)
+  m_Name: TextWindow
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -1151,7 +1152,7 @@ Transform:
   m_GameObject: {fileID: 1850383741}
   serializedVersion: 2
   m_LocalRotation: {x: 0.53729963, y: 0, z: 0, w: 0.8433915}
-  m_LocalPosition: {x: 3.5636563, y: 5.25, z: -1.03}
+  m_LocalPosition: {x: 17.43, y: 5.25, z: -1.03}
   m_LocalScale: {x: 10.5, y: 10.5, z: 0.05}
   m_ConstrainProportionsScale: 0
   m_Children:
