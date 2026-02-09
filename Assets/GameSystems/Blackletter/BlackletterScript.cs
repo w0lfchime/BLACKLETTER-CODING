@@ -11,14 +11,13 @@ namespace Blackletter
     {
         [Header("Source")]
         [TextArea(8, 32)]
-        [SerializeField] private string sourceText = "";
+        [SerializeField] public string sourceText = "";
 
 
         public bool isValid = false;
 
         public List<Blackletter.Token> tokens;
-        //private List<Blackletter.Diagnostic>? diagnostics;
-        [System.NonSerialized] private object compiledProgram; 
+ 
 
 
         public string SourceText
@@ -38,7 +37,6 @@ namespace Blackletter
 
 
 
-            isValid = false;
             isValid = false;
         }
 
