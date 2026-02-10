@@ -1,61 +1,27 @@
-using UnityEngine;
 using System.Collections.Generic;
 using System;
-
-
+using UnityEngine;
 
 namespace Blackletter
 {
-    [CreateAssetMenu(fileName = "BlackletterScript", menuName = "Scriptable Objects/BlackletterScript")]
+    [CreateAssetMenu(fileName = "BlackletterScript", menuName = "Blackletter/Script")]
     public sealed class BlackletterScript : ScriptableObject
     {
-        [Header("Source")]
-        [TextArea(8, 32)]
-        [SerializeField] public string sourceText = "";
+        [TextArea(10, 40)]
+        [SerializeField] private string source;
 
+        [NonSerialized] public List<Token> tokens;
+        [NonSerialized] public bool isDirty = true;
 
-        public bool isValid = false;
-
-        public List<Blackletter.Token> tokens;
- 
-
-
-        public string SourceText
+        public string Source
         {
-            get => sourceText;
+            get => source;
             set
-            { 
-                if (sourceText == value) return;
-                sourceText = value;
-                Invalidate();
+            {
+                if (source == value) return;
+                source = value;
+                isDirty = true;
             }
         }
-
-        //mark code as dirty
-        public void Invalidate()
-        {
-
-
-
-            isValid = false;
-        }
-
-        //frequent compile on demand
-        public void Compile()
-        {
-
-
-
-            isValid = true;
-        }
-
-    #if UNITY_EDITOR
-        private void OnValidate()
-        {
-
-            Compile();
-        }
-    #endif
     }
 }
-

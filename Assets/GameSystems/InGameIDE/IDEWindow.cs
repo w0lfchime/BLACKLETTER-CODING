@@ -1,74 +1,116 @@
-using TMPro;
+﻿using TMPro;
 using UnityEngine;
 
 namespace Blackletter
 {
-    public class IDEWindow : MonoBehaviour
+    public sealed class IDEWindow : MonoBehaviour
     {
         [Header("References")]
-        public BlackletterScript script;
+        [SerializeField] private BlackletterScript script;
+        [SerializeField] private TMP_InputField inputField;
 
-        [Tooltip("Assign a TMP_InputField (uGUI) here.")]
-        public TMP_InputField inputField;
+        [Header("Execution")]
+        [Tooltip("Target GameObject the script operates on (move, etc).")]
+        [SerializeField] private GameObject executionTarget;
 
         private void Awake()
         {
-            // Optional: auto-load script text into the field at runtime.
             LoadFromScript();
         }
 
+        // -------------------------
+        // UI → Script
+        // -------------------------
 
         public void SaveToScript()
         {
-            if (script == null)
-            {
-                Debug.LogError($"{nameof(IDEWindow)}: No script assigned.", this);
-                return;
-            }
+            if (!ValidateScriptAndField()) return;
 
-            if (inputField == null)
-            {
-                Debug.LogError($"{nameof(IDEWindow)}: No TMP_InputField assigned.", this);
-                return;
-            }
-
-            script.SourceText = inputField.text;
-
-#if UNITY_EDITOR
-            // Persist changes to the asset when running in editor (and in edit mode).
-            UnityEditor.EditorUtility.SetDirty(script);
-            UnityEditor.AssetDatabase.SaveAssets();
-#endif
+            script.Source = inputField.text;
         }
 
         public void LoadFromScript()
         {
             if (script == null || inputField == null) return;
-            inputField.text = script.SourceText ?? "";
+            inputField.text = script.Source ?? string.Empty;
         }
 
-        public void SaveAndCompile()
-        {
-            Debug.Log("Saving...");
-            SaveToScript();
-            Compile();
-        }
-
+        // -------------------------
+        // Compile
+        // -------------------------
 
         public void Compile()
         {
             if (script == null)
             {
-                Debug.LogError($"{nameof(IDEWindow)}: No script assigned.", this);
+                Debug.LogError("IDEWindow: No script assigned.", this);
                 return;
             }
 
-            script.Compile();
+            script.tokens = Lexer.Tokenize(script.Source);
+            script.isDirty = false;
 
 #if UNITY_EDITOR
             UnityEditor.EditorUtility.SetDirty(script);
-            UnityEditor.AssetDatabase.SaveAssets();
 #endif
+        }
+
+        // -------------------------
+        // Run
+        // -------------------------
+
+        public void Run()
+        {
+            if (script == null)
+            {
+                Debug.LogError("IDEWindow: No script assigned.", this);
+                return;
+            }
+
+            if (script.tokens == null || script.isDirty)
+            {
+                Compile();
+            }
+
+            Interpreter.Execute(script.tokens, executionTarget);
+        }
+
+        // -------------------------
+        // Convenience (Buttons)
+        // -------------------------
+
+        public void SaveAndCompile()
+        {
+            SaveToScript();
+            Compile();
+        }
+
+        public void SaveCompileAndRun()
+        {
+            SaveToScript();
+            Compile();
+            Run();
+        }
+
+        // -------------------------
+        // Validation
+        // -------------------------
+
+        private bool ValidateScriptAndField()
+        {
+            if (script == null)
+            {
+                Debug.LogError("IDEWindow: No BlackletterScript assigned.", this);
+                return false;
+            }
+
+            if (inputField == null)
+            {
+                Debug.LogError("IDEWindow: No TMP_InputField assigned.", this);
+                return false;
+            }
+
+            return true;
         }
     }
 }
