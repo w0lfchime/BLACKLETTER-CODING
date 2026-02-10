@@ -8,6 +8,8 @@ namespace Blackletter
         [Header("References")]
         [SerializeField] private BlackletterScript script;
         [SerializeField] private TMP_InputField inputField;
+        [SerializeField] private TokenDebugView tokenDebugView;
+
 
         [Header("Execution")]
         [Tooltip("Target GameObject the script operates on (move, etc).")]
@@ -49,6 +51,8 @@ namespace Blackletter
 
             script.tokens = Lexer.Tokenize(script.Source);
             script.isDirty = false;
+
+            tokenDebugView?.Rebuild(script.tokens);
 
 #if UNITY_EDITOR
             UnityEditor.EditorUtility.SetDirty(script);
