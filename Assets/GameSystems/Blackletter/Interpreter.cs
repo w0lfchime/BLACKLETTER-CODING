@@ -7,6 +7,8 @@ namespace Blackletter
     {
         public static void Execute(List<Token> tokens, GameObject context)
         {
+            Debug.Log("Executing script...");
+
             int i = 0;
 
             while (i < tokens.Count)

@@ -49,6 +49,8 @@ namespace Blackletter
                 return;
             }
 
+            Debug.Log("Compiling script...");
+
             script.tokens = Lexer.Tokenize(script.Source);
             script.isDirty = false;
 

@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using UnityEngine;
 
 namespace Blackletter
 {
@@ -12,6 +13,7 @@ namespace Blackletter
 
         public static List<Token> Tokenize(string source)
         {
+            Debug.Log("!!!! Lexxing...");
             var tokens = new List<Token>();
             int i = 0;
 
@@ -77,6 +79,9 @@ namespace Blackletter
             }
 
             tokens.Add(new Token(TokenType.EOF, ""));
+
+            int tokencount= tokens.Count;
+            Debug.Log($"Completed lexing with {tokencount} tokens");
             return tokens;
         }
     }

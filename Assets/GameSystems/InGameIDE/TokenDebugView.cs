@@ -20,6 +20,8 @@ namespace Blackletter
 
         public void Rebuild(List<Token> tokens)
         {
+            Debug.Log("Rebuilding token view...");
+
             Clear();
 
             currentRow = CreateRow();

@@ -14,7 +14,27 @@ namespace Blackletter
             this.lexeme = lexeme;
         }
 
-        public override string ToString() => $"{type}: {lexeme}";
+        public override string ToString()
+        {
+            string returnValue = $"{type}: {lexeme}";
+            switch (type)
+            {
+                case (TokenType.LeftParen):
+                    returnValue = "(";
+                    break;
+                case (TokenType.RightParen):
+                    returnValue = ")";
+                    break;
+                default:
+                    return $"{type}: {lexeme}";
+            }
+
+
+            return returnValue;
+
+
+
+        }
     }
     public enum TokenType
     {
