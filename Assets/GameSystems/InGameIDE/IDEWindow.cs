@@ -49,6 +49,7 @@ namespace Blackletter
 
         public void SaveAndCompile()
         {
+            Debug.Log("Saving...");
             SaveToScript();
             Compile();
         }
