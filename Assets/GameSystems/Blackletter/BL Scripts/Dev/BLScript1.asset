@@ -12,7 +12,4 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6d993ce223b5d3f488a1281dcbcf1e3c, type: 3}
   m_Name: BLScript1
   m_EditorClassIdentifier: 
-  source: 'print("meow")
-
-
-    print("hi")'
+  source: print("meow
