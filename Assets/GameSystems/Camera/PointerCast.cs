@@ -24,7 +24,7 @@ public class PointerCast : MonoBehaviour
 
             if(Input.GetMouseButton(0))
             {
-                DroneView.allDrones[0].GoToPosition(DroneSpace.GridView.instance.WorldToGrid(hit.point));
+                //DroneView.allDrones[0].GoToPosition(DroneSpace.GridView.instance.WorldToGrid(hit.point));
             }
 
             DroneView.allDrones[0].MoveDirection(GetArrowKeyVector());

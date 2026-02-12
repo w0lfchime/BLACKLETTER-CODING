@@ -1,144 +1,197 @@
 using System.Collections.Generic;
 using UnityEngine;
-using DG.Tweening;
-using System;
-
 
 namespace DroneSpace
 {
-    public class GridView : MonoBehaviour
+    public sealed class GridView : MonoBehaviour
     {
-        public static GridView instance;
-        public List<GameObject>[,] gridArray;
+        public static GridView I { get; private set; }
 
-        private GameObject[,] tileArray;
-        [Range(1f, 20f)]
-        public int setSize;
-        [HideInInspector]
-        public int size;
-        public float positionMultiplier = 1;
-        public GameObject tilePrefab;
-        public GameObject dronePrefab;
-        public GameObject hubPrefab;
-        public Transform TilesParent;
+        [Header("Tile Visuals")]
+        [SerializeField] private GameObject tilePrefab;
+        [SerializeField] private Transform tilesParent;
+        [SerializeField] private float positionMultiplier = 1f;
 
-    
-        void OnEnable()
+        [Header("Runtime (View-layer occupancy)")]
+        public List<GameObject>[,] gridArray;      // objects on each tile (view-side)
+        private GameObject[,] tileArray;           // tile visuals
+
+        public int SizeX => Grid.I != null ? Grid.I.Width : 0;
+        public int SizeZ => Grid.I != null ? Grid.I.Height : 0; // backend Height maps to view Z
+
+        private void Awake()
         {
-            instance = this;
-            size = setSize*2+1;
-        }
-    
-        void Start()
-        {
-            size = setSize*2+1;
-            if (gridArray != null) return; // Already initialized, skip
-        
-            gridArray = new List<GameObject>[size, size];
-            tileArray = new GameObject[size, size];
-        
-            // Initialize all lists in the grid
-            for (int x = 0; x < size; x++)
+            if (I != null && I != this)
             {
-                for (int z = 0; z < size; z++)
+                Destroy(gameObject);
+                return;
+            }
+            I = this;
+        }
+
+        private void OnDestroy()
+        {
+            if (I == this) I = null;
+        }
+
+        private void Start()
+        {
+            if (Grid.I == null || !Grid.I.IsReady)
+            {
+                Debug.LogError("GridView requires Grid.I to exist and be initialized before GridView.Start().");
+                return;
+            }
+
+            Rebuild(force: true);
+        }
+
+        /// <summary>
+        /// Rebuilds tile visuals + occupancy arrays to match the backend Grid.
+        /// Call this after Grid.Rebuild/Init.
+        /// </summary>
+        public void Rebuild(bool force = false)
+        {
+            if (Grid.I == null || !Grid.I.IsReady)
+            {
+                Debug.LogError("Cannot build GridView: backend Grid is missing or not ready.");
+                return;
+            }
+
+            int sx = Grid.I.Width;
+            int sz = Grid.I.Height;
+
+            if (!force && tileArray != null && tileArray.GetLength(0) == sx && tileArray.GetLength(1) == sz)
+                return;
+
+            // Destroy old visuals
+            if (tileArray != null)
+            {
+                foreach (var go in tileArray)
+                    if (go != null) Destroy(go);
+            }
+
+            // Allocate new arrays
+            gridArray = new List<GameObject>[sx, sz];
+            tileArray = new GameObject[sx, sz];
+
+            for (int x = 0; x < sx; x++)
+            {
+                for (int z = 0; z < sz; z++)
                 {
                     gridArray[x, z] = new List<GameObject>();
-                    tileArray[x, z].transform.parent = TilesParent;
-                }
-            }
-            int middle = (int)(size / 2);
-            Spawn(dronePrefab , new Vector3Int(middle, 0, middle), 1);
-            Spawn(hubPrefab , new Vector3Int(middle, 0, middle));
-        }
 
-        void FixedUpdate()
-        {
-            size = setSize*2+1;
-            if(gridArray.GetLength(0) != size)
-            {
-                // Destroy all old tiles
-                foreach(var tile in tileArray)
-                    if(tile != null) tile.transform.DOScale(0, .5f).SetEase(Ease.InBack).OnComplete(() => Destroy(tile));
-                
-                // Recreate grid from scratch
-                gridArray = new List<GameObject>[size, size];
-                tileArray = new GameObject[size, size];
-                
-                for(int x = 0; x < size; x++)
-                {
-                    for(int z = 0; z < size; z++)
+                    if (tilePrefab != null)
                     {
-                        gridArray[x, z] = new List<GameObject>();
-                        tileArray[x, z] = Instantiate(tilePrefab, GridToWorld(new Vector3Int(x, 0, z)), Quaternion.identity);
-                        tileArray[x, z].transform.parent = TilesParent;
-                        tileArray[x, z].transform.DOScale(Vector3.zero, 1).From().SetEase(Ease.OutBounce);
+                        var tileGO = Instantiate(tilePrefab, GridToWorld(new Vector3Int(x, 0, z)), Quaternion.identity);
+                        if (tilesParent != null) tileGO.transform.SetParent(tilesParent, worldPositionStays: true);
+                        tileArray[x, z] = tileGO;
                     }
                 }
-
-                RemoveObject(DroneView.allDrones[0].gameObject, DroneView.allDrones[0].GetComponent<GridObject>().currentTilePosition);
-                DroneView.allDrones[0].GoToPosition(new Vector3Int(size/2,0,size/2), true);
             }
         }
+
+        // --- Coordinate conversions (view works in XZ, backend works in XY) ---
 
         public Vector3Int WorldToGrid(Vector3 position)
         {
-            int x = Mathf.RoundToInt(position.x / positionMultiplier) + size / 2;
-            int z = Mathf.RoundToInt(position.z / positionMultiplier) + size / 2;
-        
-            return loopGridPosition(new Vector3Int(x, 0, z));
+            int sx = SizeX;
+            int sz = SizeZ;
+            if (sx <= 0 || sz <= 0) return Vector3Int.zero;
+
+            int x = Mathf.RoundToInt(position.x / positionMultiplier) + sx / 2;
+            int z = Mathf.RoundToInt(position.z / positionMultiplier) + sz / 2;
+
+            return LoopGridPosition(new Vector3Int(x, 0, z));
         }
 
-        public Vector3Int loopGridPosition(Vector3Int gridPos)
+        public Vector3Int LoopGridPosition(Vector3Int gridPos)
         {
-            int x = ((gridPos.x % size) + size) % size;
-            int z = ((gridPos.z % size) + size) % size;
+            int sx = SizeX;
+            int sz = SizeZ;
+            if (sx <= 0 || sz <= 0) return Vector3Int.zero;
+
+            int x = ((gridPos.x % sx) + sx) % sx;
+            int z = ((gridPos.z % sz) + sz) % sz;
             return new Vector3Int(x, 0, z);
         }
 
         public Vector3 GridToWorld(Vector3Int gridPos)
         {
-            float x = (gridPos.x - size / 2) * positionMultiplier;
-            float z = (gridPos.z - size / 2) * positionMultiplier;
-            return new Vector3(x, 0, z);
+            int sx = SizeX;
+            int sz = SizeZ;
+            if (sx <= 0 || sz <= 0) return Vector3.zero;
+
+            float x = (gridPos.x - sx / 2) * positionMultiplier;
+            float z = (gridPos.z - sz / 2) * positionMultiplier;
+            return new Vector3(x, 0f, z);
         }
 
-        public bool Spawn(GameObject obj, Vector3Int position, float heightOffset = 0)
+        // --- Spawning / occupancy ---
+
+        public bool Spawn(GameObject prefab, Vector3Int position, float heightOffset = 0f)
         {
-            heightOffset+=.5f;
-            GameObject objIns = Instantiate(obj, GridToWorld(position)+Vector3.up * heightOffset, Quaternion.identity);
+            if (prefab == null) return false;
+
+            position = LoopGridPosition(position);
+            var objIns = Instantiate(prefab, GridToWorld(position) + Vector3.up * heightOffset, Quaternion.identity);
             AddObject(objIns, position);
             return true;
         }
 
         public bool RemoveObject(GameObject obj, Vector3Int position)
         {
-            gridArray[position.x, position.z].Remove(obj);
-            return true;
+            if (obj == null || gridArray == null) return false;
+
+            position = LoopGridPosition(position);
+            if (!InBoundsView(position)) return false;
+
+            return gridArray[position.x, position.z].Remove(obj);
         }
 
         public bool AddObject(GameObject obj, Vector3Int position)
         {
+            if (obj == null || gridArray == null) return false;
+
+            position = LoopGridPosition(position);
+            if (!InBoundsView(position)) return false;
+
             gridArray[position.x, position.z].Add(obj);
+
             var gridObject = obj.GetComponent<GridObject>();
-            if(gridObject != null)
+            if (gridObject != null)
                 gridObject.currentTilePosition = position;
+
             return true;
         }
 
-        void OnDrawGizmos()
+        private bool InBoundsView(Vector3Int p)
         {
-            if (gridArray != null)
-            {
-                for (int x = 0; x < size; x++)
-                {
-                    for (int z = 0; z < size; z++)
-                    {
-                        Gizmos.color = Color.white;
-                        Gizmos.DrawWireCube(GridToWorld(new Vector3Int(x, 0, z)), Vector3.one * positionMultiplier);
-                    }
-                }
-            }
+            int sx = SizeX;
+            int sz = SizeZ;
+            return (uint)p.x < (uint)sx && (uint)p.z < (uint)sz;
+        }
+
+        // --- Backend tile access using XZ coords (z -> y) ---
+
+        public Tile GetBackendTile(Vector3Int gridPos)
+        {
+            if (Grid.I == null || !Grid.I.IsReady) return null;
+            gridPos = LoopGridPosition(gridPos);
+            return Grid.I.Get(gridPos.x, gridPos.z);
+        }
+
+        private void OnDrawGizmos()
+        {
+            if (!Application.isPlaying) return;
+            if (Grid.I == null || !Grid.I.IsReady) return;
+
+            int sx = Grid.I.Width;
+            int sz = Grid.I.Height;
+
+            Gizmos.color = Color.white;
+            for (int x = 0; x < sx; x++)
+                for (int z = 0; z < sz; z++)
+                    Gizmos.DrawWireCube(GridToWorld(new Vector3Int(x, 0, z)), Vector3.one * positionMultiplier);
         }
     }
-
 }
