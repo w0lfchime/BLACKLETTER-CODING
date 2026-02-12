@@ -61,26 +61,26 @@ public class DroneView : GridObject
         // Calculate distance before wrapping so wrapping counts as intended distance
         float distance = (gridPosition - currentTilePosition).magnitude;
         
-        gridPosition = DroneSpace.Grid.instance.loopGridPosition(gridPosition);
-        Vector3 worldTargetPosition = DroneSpace.Grid.instance.GridToWorld(gridPosition);
+        gridPosition = DroneSpace.GridView.instance.loopGridPosition(gridPosition);
+        Vector3 worldTargetPosition = DroneSpace.GridView.instance.GridToWorld(gridPosition);
         worldTargetPosition.y = height;
 
         float time = distance / speed;
 
-        DroneSpace.Grid.instance.RemoveObject(gameObject, currentTilePosition);
+        DroneSpace.GridView.instance.RemoveObject(gameObject, currentTilePosition);
 
         moving = true;
         if (instant)
         {
             transform.position = worldTargetPosition;
-            DroneSpace.Grid.instance.AddObject(gameObject, gridPosition);
+            DroneSpace.GridView.instance.AddObject(gameObject, gridPosition);
             moving = false;
             return;
         }
         transform.DOMove(worldTargetPosition, time)
             .SetEase(Ease.InOutQuad)
             .OnComplete(() => {
-                DroneSpace.Grid.instance.AddObject(gameObject, gridPosition);
+                DroneSpace.GridView.instance.AddObject(gameObject, gridPosition);
                 moving = false;
             });
     }

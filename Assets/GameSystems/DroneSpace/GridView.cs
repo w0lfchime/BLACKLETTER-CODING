@@ -6,10 +6,11 @@ using System;
 
 namespace DroneSpace
 {
-    public class Grid : MonoBehaviour
+    public class GridView : MonoBehaviour
     {
-        public static Grid instance;
+        public static GridView instance;
         public List<GameObject>[,] gridArray;
+
         private GameObject[,] tileArray;
         [Range(1f, 20f)]
         public int setSize;
