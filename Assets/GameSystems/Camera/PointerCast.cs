@@ -16,6 +16,12 @@ public class PointerCast : MonoBehaviour
     
     void LateUpdate()
     {
+        if(DroneView.allDrones.Count == 0) 
+        {
+            Debug.LogWarning("allDrones is empty");
+            return;
+        }
+
         Ray ray = Camera.main.ScreenPointToRay(Input.mousePosition);
         RaycastHit hit;
         if (Physics.Raycast(ray, out hit))

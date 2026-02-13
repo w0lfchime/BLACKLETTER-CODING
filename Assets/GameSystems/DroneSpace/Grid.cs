@@ -2,6 +2,27 @@ using UnityEngine;
 
 namespace DroneSpace
 {
+    public sealed class Tile
+    {
+        public readonly int x;
+        public readonly int y;
+
+        // fields (expand as needed)
+        public byte type;   
+        public byte flags; 
+
+        public Tile(int x, int y)
+        {
+            this.x = x;
+            this.y = y;
+            type = 0;
+            flags = 0;
+        }
+
+        public override string ToString() => $"Tile({x},{y}) type={type}";
+    }
+
+
     public sealed class Grid : MonoBehaviour
     {
         public static Grid I { get; private set; }
@@ -49,10 +70,11 @@ namespace DroneSpace
             width = Mathf.Max(1, width);
             height = Mathf.Max(1, height);
 
-            if (!Application.isPlaying && rebuildOnValidate)
+            if (rebuildOnValidate)
             {
                 // In edit mode, keep it synced for debugging.
                 Rebuild(width, height);
+                GridView.I?.Rebuild(force: false);
             }
         }
 #endif

@@ -182,7 +182,7 @@ MeshRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 2100000, guid: c3f6a265553930349a882b1ec10f3386, type: 2}
+  - {fileID: 2100000, guid: d50dcf17f139db64bacd01bf53a7ede5, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -875,9 +875,23 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 78928ed693a343c4c95a934e1880c898, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  tilePrefab: {fileID: 5340295721577826874, guid: 79df49eab60ff0349a8aeaf97f041df0, type: 3}
-  tilesParent: {fileID: 849211704}
   positionMultiplier: 1
+  tileScale: 50
+  tileRotation: {x: -90, y: 0, z: 0}
+  tileMesh: {fileID: -8806005965475233444, guid: 5ef36d09a393d0f4e9749dcb0f0c2cd2, type: 3}
+  tileMaterials:
+  - {fileID: 2100000, guid: 421eda88bfde50349b1ab9031d51e1ac, type: 2}
+  - {fileID: 2100000, guid: 64aae480c7d30394ab0728fe3e68455e, type: 2}
+  wallMesh: {fileID: -6416487109790020563, guid: 5ef36d09a393d0f4e9749dcb0f0c2cd2, type: 3}
+  wallMaterials:
+  - {fileID: 2100000, guid: 421eda88bfde50349b1ab9031d51e1ac, type: 2}
+  - {fileID: 2100000, guid: 64aae480c7d30394ab0728fe3e68455e, type: 2}
+  wallOffset: {x: -0.5, y: -0.05}
+  cornerMesh: {fileID: -7053214949996592884, guid: 5ef36d09a393d0f4e9749dcb0f0c2cd2, type: 3}
+  cornerMaterials:
+  - {fileID: 2100000, guid: 421eda88bfde50349b1ab9031d51e1ac, type: 2}
+  - {fileID: 2100000, guid: 64aae480c7d30394ab0728fe3e68455e, type: 2}
+  cornerOffset: {x: -0.5, y: 0}
 --- !u!4 &143655750928928052
 Transform:
   m_ObjectHideFlags: 0

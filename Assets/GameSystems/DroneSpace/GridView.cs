@@ -1,5 +1,6 @@
 using System.Collections.Generic;
 using UnityEngine;
+using DG.Tweening;
 
 namespace DroneSpace
 {
@@ -7,14 +8,38 @@ namespace DroneSpace
     {
         public static GridView I { get; private set; }
 
-        [Header("Tile Visuals")]
-        [SerializeField] private GameObject tilePrefab;
-        [SerializeField] private Transform tilesParent;
+        [Header("Grid Settings")]
         [SerializeField] private float positionMultiplier = 1f;
+        [SerializeField] private float tileScale = 1f;
+        [SerializeField] private Vector3 tileRotation = Vector3.zero; // Euler angles added to all tiles
+        [SerializeField] private float animDuration = 0.5f;
+        [SerializeField] private float waveDelay = 0.1f; // delay per unit distance from center
+        [SerializeField] private Ease animEase = Ease.OutBack;
+
+        [Header("Main Tiles")]
+        [SerializeField] private Mesh tileMesh;
+        [SerializeField] private Material[] tileMaterials; // Must have GPU Instancing enabled!
+
+        [Header("Wall Tiles (edges)")]
+        [SerializeField] private Mesh wallMesh;
+        [SerializeField] private Material[] wallMaterials;
+        [SerializeField] private Vector2 wallOffset = Vector2.zero; // x=height, y=distance from grid
+
+        [Header("Corner Tiles")]
+        [SerializeField] private Mesh cornerMesh;
+        [SerializeField] private Material[] cornerMaterials;
+        [SerializeField] private Vector2 cornerOffset = Vector2.zero; // x=height, y=distance from grid
 
         [Header("Runtime (View-layer occupancy)")]
         public List<GameObject>[,] gridArray;      // objects on each tile (view-side)
-        private GameObject[,] tileArray;           // tile visuals
+        
+        // GPU Instancing data
+        private Matrix4x4[] tileMatrices, wallMatrices, cornerMatrices;
+        private float[] tileAnim, wallAnim, cornerAnim;
+        private Vector3[] tilePos;
+        private int tileCount, wallCount, cornerCount, prevSx, prevSz;
+        
+        private MaterialPropertyBlock propertyBlock;
 
         public int SizeX => Grid.I != null ? Grid.I.Width : 0;
         public int SizeZ => Grid.I != null ? Grid.I.Height : 0; // backend Height maps to view Z
@@ -42,51 +67,131 @@ namespace DroneSpace
                 return;
             }
 
+            propertyBlock = new MaterialPropertyBlock();
             Rebuild(force: true);
         }
 
-        /// <summary>
-        /// Rebuilds tile visuals + occupancy arrays to match the backend Grid.
-        /// Call this after Grid.Rebuild/Init.
-        /// </summary>
+        private void Update()
+        {
+            float dt = Time.deltaTime, speed = animDuration > 0 ? 1f / animDuration : 100f;
+            Vector3 bs = Vector3.one * tileScale * positionMultiplier;
+            Quaternion br = Quaternion.Euler(tileRotation);
+
+            // Animate tiles
+            if (tileMesh != null && tileMaterials?.Length > 0 && tileMatrices != null)
+            {
+                for (int i = 0; i < tileCount; i++)
+                {
+                    tileAnim[i] = Mathf.MoveTowards(tileAnim[i], 1f, dt * speed);
+                    tileMatrices[i] = Matrix4x4.TRS(tilePos[i], br, bs * DOVirtual.EasedValue(0f, 1f, Mathf.Clamp01(tileAnim[i]), animEase));
+                }
+                DrawInstanced(tileMesh, tileMaterials, tileMatrices, tileCount);
+            }
+
+            // Animate walls
+            if (wallMesh != null && wallMaterials?.Length > 0 && wallMatrices != null)
+            {
+                UpdateWalls(dt, speed, bs, br);
+                DrawInstanced(wallMesh, wallMaterials, wallMatrices, wallCount);
+            }
+
+            // Animate corners
+            if (cornerMesh != null && cornerMaterials?.Length > 0 && cornerMatrices != null)
+            {
+                UpdateCorners(dt, speed, bs, br);
+                DrawInstanced(cornerMesh, cornerMaterials, cornerMatrices, cornerCount);
+            }
+        }
+
+        private void DrawInstanced(Mesh mesh, Material[] mats, Matrix4x4[] matrices, int count)
+        {
+            for (int sub = 0; sub < mesh.subMeshCount && sub < mats.Length; sub++)
+                if (mats[sub] != null)
+                    for (int i = 0; i < count; i += 1023)
+                        Graphics.DrawMeshInstanced(mesh, sub, mats[sub], matrices, Mathf.Min(1023, count - i), propertyBlock);
+        }
+
         public void Rebuild(bool force = false)
         {
-            if (Grid.I == null || !Grid.I.IsReady)
-            {
-                Debug.LogError("Cannot build GridView: backend Grid is missing or not ready.");
-                return;
-            }
+            if (Grid.I == null || !Grid.I.IsReady) { Debug.LogError("Cannot build GridView: backend Grid is missing or not ready."); return; }
 
-            int sx = Grid.I.Width;
-            int sz = Grid.I.Height;
+            int sx = Grid.I.Width, sz = Grid.I.Height, n = sx * sz;
+            if (!force && tileMatrices != null && tileCount == n && prevSx == sx && prevSz == sz) return;
 
-            if (!force && tileArray != null && tileArray.GetLength(0) == sx && tileArray.GetLength(1) == sz)
-                return;
+            bool sizeChanged = prevSx != sx || prevSz != sz;
+            Vector3 sv = Vector3.one * tileScale * positionMultiplier;
+            Quaternion br = Quaternion.Euler(tileRotation);
 
-            // Destroy old visuals
-            if (tileArray != null)
-            {
-                foreach (var go in tileArray)
-                    if (go != null) Destroy(go);
-            }
-
-            // Allocate new arrays
+            // Main grid tiles - wave from center
             gridArray = new List<GameObject>[sx, sz];
-            tileArray = new GameObject[sx, sz];
+            float[] oldAnim = tileAnim;
+            tileMatrices = new Matrix4x4[n];
+            tilePos = new Vector3[n];
+            tileAnim = new float[n];
+            tileCount = n;
 
+            float cx = (sx - 1) / 2f, cz = (sz - 1) / 2f;
+            float maxDist = Mathf.Sqrt(cx * cx + cz * cz);
+            int idx = 0;
             for (int x = 0; x < sx; x++)
             {
                 for (int z = 0; z < sz; z++)
                 {
                     gridArray[x, z] = new List<GameObject>();
-
-                    if (tilePrefab != null)
-                    {
-                        var tileGO = Instantiate(tilePrefab, GridToWorld(new Vector3Int(x, 0, z)), Quaternion.identity);
-                        if (tilesParent != null) tileGO.transform.SetParent(tilesParent, worldPositionStays: true);
-                        tileArray[x, z] = tileGO;
-                    }
+                    Vector3 p = GridToWorld(new Vector3Int(x, 0, z));
+                    tilePos[idx] = p;
+                    float dist = Mathf.Sqrt((x - cx) * (x - cx) + (z - cz) * (z - cz));
+                    float delay = dist * waveDelay / (animDuration > 0 ? animDuration : 1f);
+                    tileAnim[idx] = (!sizeChanged && oldAnim != null && x < prevSx && z < prevSz) ? oldAnim[x * prevSz + z] : -delay;
+                    tileMatrices[idx] = Matrix4x4.TRS(p, br, sv * DOVirtual.EasedValue(0f, 1f, Mathf.Clamp01(tileAnim[idx]), animEase));
+                    idx++;
                 }
+            }
+            prevSx = sx; prevSz = sz;
+
+            // Walls & Corners - continue wave outward
+            int wn = 2 * (sx + sz);
+            float[] oldWall = wallAnim, oldCorner = cornerAnim;
+            wallMatrices = new Matrix4x4[wn]; wallAnim = new float[wn]; wallCount = wn;
+            cornerMatrices = new Matrix4x4[4]; cornerAnim = new float[4]; cornerCount = 4;
+            float edgeDelay = (maxDist + 1) * waveDelay / (animDuration > 0 ? animDuration : 1f);
+            float cornerDelay = (maxDist + 2) * waveDelay / (animDuration > 0 ? animDuration : 1f);
+            for (int i = 0; i < wn; i++) wallAnim[i] = (!sizeChanged && oldWall != null && i < oldWall.Length) ? oldWall[i] : -edgeDelay;
+            for (int i = 0; i < 4; i++) cornerAnim[i] = (!sizeChanged && oldCorner != null && i < oldCorner.Length) ? oldCorner[i] : -cornerDelay;
+        }
+
+        private void UpdateWalls(float dt, float speed, Vector3 bs, Quaternion br)
+        {
+            int sx = SizeX, sz = SizeZ;
+            float hx = sx / 2f, hz = sz / 2f, pm = positionMultiplier, wd = wallOffset.y;
+            int w = 0;
+            for (int i = 0; i < sx; i++)
+            {
+                float x = (i - hx + 0.5f) * pm;
+                wallAnim[w] = Mathf.MoveTowards(wallAnim[w], 1f, dt * speed);
+                wallMatrices[w++] = Matrix4x4.TRS(new Vector3(x, wallOffset.x, (-hz - 0.5f - wd) * pm), br * Quaternion.Euler(0, 0, 180), bs * DOVirtual.EasedValue(0f, 1f, Mathf.Clamp01(wallAnim[w - 1]), animEase));
+                wallAnim[w] = Mathf.MoveTowards(wallAnim[w], 1f, dt * speed);
+                wallMatrices[w++] = Matrix4x4.TRS(new Vector3(x, wallOffset.x, (hz + 0.5f + wd) * pm), br, bs * DOVirtual.EasedValue(0f, 1f, Mathf.Clamp01(wallAnim[w - 1]), animEase));
+            }
+            for (int i = 0; i < sz; i++)
+            {
+                float z = (i - hz + 0.5f) * pm;
+                wallAnim[w] = Mathf.MoveTowards(wallAnim[w], 1f, dt * speed);
+                wallMatrices[w++] = Matrix4x4.TRS(new Vector3((-hx - 0.5f - wd) * pm, wallOffset.x, z), br * Quaternion.Euler(0, 0, -90), bs * DOVirtual.EasedValue(0f, 1f, Mathf.Clamp01(wallAnim[w - 1]), animEase));
+                wallAnim[w] = Mathf.MoveTowards(wallAnim[w], 1f, dt * speed);
+                wallMatrices[w++] = Matrix4x4.TRS(new Vector3((hx + 0.5f + wd) * pm, wallOffset.x, z), br * Quaternion.Euler(0, 0, 90), bs * DOVirtual.EasedValue(0f, 1f, Mathf.Clamp01(wallAnim[w - 1]), animEase));
+            }
+        }
+
+        private void UpdateCorners(float dt, float speed, Vector3 bs, Quaternion br)
+        {
+            float hx = SizeX / 2f, hz = SizeZ / 2f, pm = positionMultiplier, cd = cornerOffset.y;
+            float cx = (hx + 0.5f + cd) * pm, cz = (hz + 0.5f + cd) * pm;
+            (Vector3 p, float r)[] c = { (new(-cx, cornerOffset.x, -cz), 180), (new(cx, cornerOffset.x, -cz), 90), (new(-cx, cornerOffset.x, cz), -90), (new(cx, cornerOffset.x, cz), 0) };
+            for (int i = 0; i < 4; i++)
+            {
+                cornerAnim[i] = Mathf.MoveTowards(cornerAnim[i], 1f, dt * speed);
+                cornerMatrices[i] = Matrix4x4.TRS(c[i].p, br * Quaternion.Euler(0, 0, c[i].r), bs * DOVirtual.EasedValue(0f, 1f, Mathf.Clamp01(cornerAnim[i]), animEase));
             }
         }
 
